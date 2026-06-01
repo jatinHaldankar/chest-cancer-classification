@@ -1,7 +1,7 @@
-import os
-import urllib.request as request
-from zipfile import ZipFile
 import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten, BatchNormalization, Dropout
+from tensorflow.keras.optimizers import Adam
 
 
 class PrepareBaseModel:
@@ -25,20 +25,18 @@ class PrepareBaseModel:
             for layer in model.layers[:freeze_till]:
                 layer.trainable = False
         
-        flattern_in = tf.keras.layers.Flatten()(model.output)
-        prediction = tf.keras.layers.Dense(
-            units = classes,
-            activation = "softmax"
-        )(flattern_in)
-
-        full_model = tf.keras.models.Model(
-            inputs = model.input,
-            outputs = prediction
-        )
+        # Building the model using the Sequential API
+        full_model = Sequential()
+        full_model.add(model)
+        full_model.add(Flatten())
+        full_model.add(Dense(256, activation="relu"))
+        full_model.add(BatchNormalization())
+        full_model.add(Dropout(0.5))
+        full_model.add(Dense(units=classes, activation="softmax"))
 
         full_model.compile(
-            optimizer=tf.keras.optimizers.SGD(learning_rate=learning_rate),
-            loss=tf.keras.losses.CategoricalCrossentropy(),
+            optimizer=Adam(learning_rate=learning_rate),
+            loss="categorical_crossentropy",
             metrics=["accuracy"]
         )
 
